@@ -993,8 +993,8 @@ bool SendMsgBtnUI( String cmd, String  uid,
     doc["cmd"] = cmd;
     if(btnState.length() >0 ) doc["state"] = btnState.c_str();
     if(btnIcon.length() >0 )  doc["icon"] = btnIcon.c_str();
-    if(btnColor.length() >0 ) doc["color"] = btnColor.c_str();
-    if(btnText.length() >0 )  doc["text"] = btnText.c_str();
+    if(btnColor.length() >0 )  doc["color"] = btnColor.c_str();
+    if(btnText.length() >0 ) doc["text"] = btnText.c_str();
     doc["timestamp"] = lasttimestamp;
     
     String json;
