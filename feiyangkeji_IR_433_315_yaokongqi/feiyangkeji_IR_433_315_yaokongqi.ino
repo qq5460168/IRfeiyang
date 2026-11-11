@@ -11,7 +11,7 @@
 #include <Ticker.h>
 #include "315_Handler.h"
 #include "433_Handler.h"
-#include "IR_handler.h"
+#include "IR_Handler.h"
 #include "feiyangkeji.h"
 #include "ConfigHandler.h"
 #include "OneButton.h"
@@ -299,7 +299,7 @@ void buttonx_callback( const int& index, const String & state ) {
 String getTcpServerTopic(){
   return TCP_SERVER_TOPIC;
 }
-void mqtt_callback(char *topic, byte *payload, unsigned int length)
+void mqtt_callback(char *topic, uint8_t *payload, unsigned int length)
 {
     Serial.print("Message arrived [");
     Serial.print(topic);
@@ -407,8 +407,11 @@ int loop_callback (){
   digitalWrite(YYXBC_LED_LIGHT, !state);
   delay(500);
   digitalWrite(YYXBC_LED_LIGHT, state);
+#else
+  (void)0;
 #endif
 
+  return 0;
 }
 
 /**************************************************************************
@@ -563,6 +566,7 @@ bool SendMsgAudioBoxUI(String btnId,  String state){
        Serial.println("con't find topic by btnid :" + btnId);
     }
 
+    return bret;
 }
 
 /*
@@ -684,7 +688,9 @@ bool getTopicList(){
    
   char URL[256];
   sprintf(URL,"%s/api/app/device/login?auth=%s",(char*)weburl.c_str(),(char*)auth.c_str());
-  httpClient.begin(URL); 
+  // ESP8266 core 3.x 已废弃 begin(String)，必须显式传入 WiFiClient
+  WiFiClient httpWifiClient;
+  httpClient.begin(httpWifiClient, URL); 
   
    #ifdef HANDLER_DEBUG  
       Serial.print("URL: "); Serial.println(URL);
@@ -787,8 +793,9 @@ void setup() {
 //    pinMode(  YYXBC_BUTTON_RESET, OUTPUT);
 //    digitalWrite(  YYXBC_BUTTON_RESET, HIGH);
   #else
-   pinMode(  YYXBC_BUTTON_RESET, OUTPUT);
-   digitalWrite(  YYXBC_BUTTON_RESET, LOW);
+   // 修复：GPIO5 是 OneButton 的按键输入（activeLow=true），必须保持输入上拉。
+   // 原来这里设成 OUTPUT + LOW，digitalRead 恒为低，按键会被一直判定为"长按"。
+   pinMode(  YYXBC_BUTTON_RESET, INPUT_PULLUP);
   #endif
 
 
@@ -987,7 +994,7 @@ bool SendMsgBtnUI( String cmd, String  uid,
     if(btnState.length() >0 ) doc["state"] = btnState.c_str();
     if(btnIcon.length() >0 )  doc["icon"] = btnIcon.c_str();
     if(btnColor.length() >0 ) doc["color"] = btnColor.c_str();
-    if(btnText.length() >0 ) doc["text"] = btnText.c_str();
+    if(btnText.length() >0 )  doc["text"] = btnText.c_str();
     doc["timestamp"] = lasttimestamp;
     
     String json;
@@ -1018,7 +1025,7 @@ bool mySwitchHandler(const int& index ,String str)
   bool ret = false;
   Serial.println(dif);
   if (dif > 500) {
-      bool is_led = getStateByIndex(index);
+      bool is_led = oState[index];
       oState[index] = !oState[index];
       if (is_led == YYXBC_HIGH)
       {
